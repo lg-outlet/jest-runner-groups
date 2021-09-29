@@ -1,13 +1,11 @@
 const fs = require( 'fs' );
 
-const JestRunner = require( 'jest-runner' );
+const PlaywrightRunner = require( 'jest-playwright-preset/lib/PlaywrightRunner' ).default;
 const { parse } = require( 'jest-docblock' );
-
-const TestRunner = Object.prototype.hasOwnProperty.call( JestRunner, 'default' ) ? JestRunner.default : JestRunner;
 
 const ARG_PREFIX = '--group=';
 
-class GroupRunner extends TestRunner {
+class GroupRunner extends PlaywrightRunner {
 
 	static getGroups( args ) {
 		const include = [];
@@ -23,12 +21,11 @@ class GroupRunner extends TestRunner {
 				}
 			}
 		} );
-
 		return {
 			include,
 			exclude,
 		};
-	}
+	};
 
 	static filterTest( { include, exclude }, test ) {
 		let found = include.length === 0;
@@ -42,35 +39,25 @@ class GroupRunner extends TestRunner {
 						found = false;
 						break;
 					}
-
 					if ( include.find( ( group ) => parsedGroup[i].startsWith( group ) ) ) {
 						found = true;
 					}
 				}
 			}
 		}
-
 		return found;
-	}
+	};
 
 	static filterTests( args, tests ) {
 		const groups = GroupRunner.getGroups( args );
 		return groups.include.length > 0 || groups.exclude.length > 0
 			? tests.filter( ( test ) => GroupRunner.filterTest( groups, test ) )
 			: tests;
-	}
+	};
 
-	runTests( tests, watcher, onStart, onResult, onFailure, options ) {
-		return super.runTests(
-			GroupRunner.filterTests( process.argv, tests ),
-			watcher,
-			onStart,
-			onResult,
-			onFailure,
-			options,
-		);
-	}
-
+	async runTests( tests, watcher, onStart, onResult, onFailure, options ) {
+		await super.runTests(GroupRunner.filterTests( process.argv, tests ),watcher,onStart,onResult,onFailure,options);
+	};
 }
 
 module.exports = GroupRunner;
